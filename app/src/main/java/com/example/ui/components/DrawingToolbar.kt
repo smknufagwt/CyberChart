@@ -142,15 +142,15 @@ private fun BentoFooterButton(
                 text = title,
                 color = if (isSelected) activeTextColor else titleColor,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 12.sp,
+                fontWeight = FontWeight.ExtraBold
             )
             Text(
                 text = subTitle,
-                color = if (isSelected) activeTextColor.copy(alpha = 0.8f) else CyberTextSecondary,
+                color = if (isSelected) activeTextColor.copy(alpha = 0.85f) else CyberTextSecondary,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Medium
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -89,7 +91,7 @@ fun CyberHeader(
             .fillMaxWidth()
             .background(CyberBlack)
             .border(2.dp, BentoWhiteBorder)
-            .padding(8.dp)
+            .padding(10.dp)
     ) {
         // Row 1: Symbol Title + Ticker Price + Gas + Quick Expand Button
         Row(
@@ -102,33 +104,33 @@ fun CyberHeader(
                     text = state.symbol.displayName,
                     color = Color.White,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 // Live price readout
                 Text(
                     text = String.format(Locale.US, "%.${state.symbol.pipDigits}f", currentPrice),
                     color = if (isPositive) ElectricNeonViolet else CyberCyan,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 // Percentage badge
                 Box(
                     modifier = Modifier
                         .background(if (isPositive) ElectricNeonViolet.copy(alpha = 0.25f) else CyberCyan.copy(alpha = 0.25f))
                         .border(1.dp, if (isPositive) ElectricNeonViolet else CyberCyan)
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = String.format(Locale.US, "%+.2f%%", changePct),
                         color = if (isPositive) Color.White else CyberCyan,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 9.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -150,18 +152,18 @@ fun CyberHeader(
                         .background(fngColor.copy(alpha = 0.15f))
                         .border(1.dp, fngColor)
                         .clickable { onOpenMacro() }
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .padding(horizontal = 7.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "🧠 F&G $fngVal",
                         color = fngColor,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp
+                        fontSize = 11.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Real-time Gas GWEI pill
                 val gasColor = when (state.gasStatus) {
@@ -173,41 +175,41 @@ fun CyberHeader(
                     modifier = Modifier
                         .background(gasColor.copy(alpha = 0.15f))
                         .border(1.dp, gasColor)
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                        .padding(horizontal = 7.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "⛽ ${state.gasGwei}GWEI",
+                        text = "⛽ ${state.gasGwei} GWEI",
                         color = gasColor,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp
+                        fontSize = 11.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
-                // Asset Selector Toggle Button (Allows hiding asset bar for full screen space)
+                // Asset Selector Toggle Button
                 Box(
                     modifier = Modifier
                         .background(if (isAssetStripExpanded) CyberDarkSurface else ElectricNeonViolet)
                         .border(1.dp, BentoWhiteSubtle)
                         .clickable { isAssetStripExpanded = !isAssetStripExpanded }
-                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                        .padding(horizontal = 8.dp, vertical = 5.dp)
                 ) {
                     Text(
-                        text = if (isAssetStripExpanded) "▲ COMPACT" else "▼ ASSETS",
+                        text = if (isAssetStripExpanded) "▲ HIDE" else "▼ ASSETS",
                         color = Color.White,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
 
-        // Expandable Symbol Selector & Asset Category Filter (Space efficient)
+        // Expandable Symbol Selector & Asset Category Filter
         if (isAssetStripExpanded) {
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -215,8 +217,8 @@ fun CyberHeader(
             ) {
                 // Category Filter Pills (ALL, CRYPTO, FOREX)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.padding(end = 6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(end = 8.dp)
                 ) {
                     listOf("ALL", "CRYPTO", "FOREX").forEach { cat ->
                         val isCatSelected = cat == selectedCategory
@@ -225,13 +227,13 @@ fun CyberHeader(
                                 .background(if (isCatSelected) Color.White else CyberBlack)
                                 .border(1.dp, if (isCatSelected) Color.White else BentoWhiteSubtle)
                                 .clickable { selectedCategory = cat }
-                                .padding(horizontal = 5.dp, vertical = 3.dp)
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
                         ) {
                             Text(
                                 text = cat,
                                 color = if (isCatSelected) Color.Black else CyberTextSecondary,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 8.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -241,7 +243,7 @@ fun CyberHeader(
                 // Filtered Symbols LazyRow
                 LazyRow(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(items = filteredSymbols) { sym ->
                         val isSelected = sym == state.symbol
@@ -253,14 +255,14 @@ fun CyberHeader(
                                     color = if (isSelected) Color.White else BentoWhiteSubtle
                                 )
                                 .clickable { onSelectSymbol(sym) }
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (sym.isForex) "💱 ${sym.displayName.replace(" / ", "/")}" else "⚡ ${sym.displayName.replace(" / ", "/")}",
                                 color = if (isSelected) Color.White else CyberTextPrimary,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 9.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -269,31 +271,120 @@ fun CyberHeader(
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Row 3: Timeframe Intervals, Chart Styles & Indicators Horizontal Bar
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Timeframe intervals
-            items(ChartInterval.entries) { inter ->
-                val isSelected = inter == state.interval
-                Box(
-                    modifier = Modifier
-                        .background(if (isSelected) Color.White else CyberBlack)
-                        .border(1.dp, if (isSelected) Color.White else BentoWhiteSubtle)
-                        .clickable { onSelectInterval(inter) }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = inter.label,
-                        color = if (isSelected) Color.Black else CyberTextSecondary,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+            // Timeframe interval TradingView-style Popup Selector
+            item {
+                var timeframeMenuExpanded by remember { mutableStateOf(false) }
+
+                Box {
+                    // Trigger Button
+                    Row(
+                        modifier = Modifier
+                            .background(ElectricNeonViolet)
+                            .border(1.dp, Color.White)
+                            .clickable { timeframeMenuExpanded = !timeframeMenuExpanded }
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "⏱️ ${state.interval.label}",
+                            color = Color.White,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = if (timeframeMenuExpanded) "▲" else "▼",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // TradingView-Style Popup Dropdown Menu
+                    DropdownMenu(
+                        expanded = timeframeMenuExpanded,
+                        onDismissRequest = { timeframeMenuExpanded = false },
+                        modifier = Modifier
+                            .background(CyberBlack)
+                            .border(1.dp, BentoWhiteBorder)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(CyberDarkSurface)
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "SELECT TIMEFRAME",
+                                color = CyberCyan,
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        ChartInterval.entries.forEach { inter ->
+                            val isSelected = inter == state.interval
+                            val nameDesc = when (inter) {
+                                ChartInterval.ONE_MIN -> "1 Minute"
+                                ChartInterval.FIVE_MIN -> "5 Minutes"
+                                ChartInterval.FIFTEEN_MIN -> "15 Minutes"
+                                ChartInterval.ONE_HOUR -> "1 Hour"
+                                ChartInterval.FOUR_HOUR -> "4 Hours"
+                                ChartInterval.ONE_DAY -> "1 Day (365D)"
+                            }
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = inter.label,
+                                            color = if (isSelected) ElectricNeonViolet else Color.White,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.ExtraBold
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Text(
+                                            text = nameDesc,
+                                            color = if (isSelected) CyberCyan else CyberTextSecondary,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (isSelected) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "✓",
+                                                color = ElectricNeonViolet,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    timeframeMenuExpanded = false
+                                    onSelectInterval(inter)
+                                },
+                                modifier = Modifier
+                                    .background(if (isSelected) ElectricNeonViolet.copy(alpha = 0.15f) else Color.Transparent)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -302,7 +393,7 @@ fun CyberHeader(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(14.dp)
+                        .height(18.dp)
                         .background(BentoWhiteSubtle)
                 )
             }
@@ -315,13 +406,13 @@ fun CyberHeader(
                         .background(if (isSelected) CyberCyan else CyberBlack)
                         .border(1.dp, if (isSelected) Color.White else BentoWhiteSubtle)
                         .clickable { onSelectChartStyle(style) }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = style.label,
                         color = if (isSelected) Color.Black else CyberTextPrimary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -332,7 +423,7 @@ fun CyberHeader(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(14.dp)
+                        .height(18.dp)
                         .background(BentoWhiteSubtle)
                 )
             }
@@ -344,13 +435,13 @@ fun CyberHeader(
                         .background(if (state.showSma20) ElectricNeonViolet else CyberBlack)
                         .border(1.dp, if (state.showSma20) Color.White else BentoWhiteSubtle)
                         .clickable { onToggleSma() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = "SMA20",
                         color = if (state.showSma20) Color.White else CyberTextSecondary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -363,13 +454,13 @@ fun CyberHeader(
                         .background(if (state.showEma50) Color(0xFFFFB300) else CyberBlack)
                         .border(1.dp, if (state.showEma50) Color.White else BentoWhiteSubtle)
                         .clickable { onToggleEma() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = "EMA50",
                         color = if (state.showEma50) Color.Black else CyberTextSecondary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -382,13 +473,13 @@ fun CyberHeader(
                         .background(if (state.showBollingerBands) Color(0xFF00E5FF) else CyberBlack)
                         .border(1.dp, if (state.showBollingerBands) Color.White else BentoWhiteSubtle)
                         .clickable { onToggleBollinger() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = "BB(20,2)",
                         color = if (state.showBollingerBands) Color.Black else CyberTextSecondary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -401,13 +492,13 @@ fun CyberHeader(
                         .background(if (state.showRsi14) CyberCyan else CyberBlack)
                         .border(1.dp, if (state.showRsi14) Color.White else BentoWhiteSubtle)
                         .clickable { onToggleRsi() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = "RSI14",
                         color = if (state.showRsi14) Color.Black else CyberTextSecondary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -420,13 +511,13 @@ fun CyberHeader(
                         .background(CyberBlack)
                         .border(1.dp, BentoWhiteSubtle)
                         .clickable { onOpenCalendar() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "📅CAL",
+                        text = "📅 CALENDAR",
                         color = CyberCyan,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -439,13 +530,13 @@ fun CyberHeader(
                         .background(ElectricNeonViolet)
                         .border(1.dp, Color.White)
                         .clickable { onOpenMacro() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "🌐MACRO",
+                        text = "🌐 MACRO",
                         color = Color.White,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -459,13 +550,13 @@ fun CyberHeader(
                         .background(if (activeAlertCount > 0) Color(0xFFFFD700) else CyberBlack)
                         .border(1.dp, if (activeAlertCount > 0) Color.White else BentoWhiteSubtle)
                         .clickable { onOpenAlerts() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = if (activeAlertCount > 0) "🔔($activeAlertCount)" else "🔔ALERT",
+                        text = if (activeAlertCount > 0) "🔔 ALERTS ($activeAlertCount)" else "🔔 ALERTS",
                         color = if (activeAlertCount > 0) Color.Black else CyberTextSecondary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -478,13 +569,13 @@ fun CyberHeader(
                         .background(ElectricNeonViolet.copy(alpha = 0.2f))
                         .border(1.dp, ElectricNeonViolet)
                         .clickable { onOpenTerms() }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "📜TERMS",
+                        text = "📜 TERMS",
                         color = ElectricNeonViolet,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 8.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

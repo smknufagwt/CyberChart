@@ -47,11 +47,13 @@ enum class DrawingMode {
 /**
  * Chart timeframe interval for Binance WebSocket and REST streams.
  */
-enum class ChartInterval(val code: String, val label: String) {
-    ONE_MIN("1m", "1M"),
-    FIVE_MIN("5m", "5M"),
-    FIFTEEN_MIN("15m", "15M"),
-    ONE_HOUR("1h", "1H")
+enum class ChartInterval(val code: String, val label: String, val durationMs: Long) {
+    ONE_MIN("1m", "1M", 60_000L),
+    FIVE_MIN("5m", "5M", 300_000L),
+    FIFTEEN_MIN("15m", "15M", 900_000L),
+    ONE_HOUR("1h", "1H", 3_600_000L),
+    FOUR_HOUR("4h", "4H", 14_400_000L),
+    ONE_DAY("1d", "1D", 86_400_000L)
 }
 
 /**

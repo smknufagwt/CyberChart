@@ -48,7 +48,7 @@ class ChartViewModel(
     private var forexSynchroJob: Job? = null
 
     companion object {
-        const val MAX_DATA_CAP = 500
+        const val MAX_DATA_CAP = 1000
         const val SMA_PERIOD = 20
         const val RSI_PERIOD = 14
     }
@@ -194,7 +194,7 @@ class ChartViewModel(
         if (symbol.isForex) {
             // High-frequency Forex Synchro Live Feed
             viewModelScope.launch {
-                val initialCandles = generateHistoricalForexCandles(symbol)
+                val initialCandles = generateHistoricalForexCandles(symbol, interval)
                 withContext(Dispatchers.Default) {
                     synchronized(internalCandles) {
                         internalCandles.clear()
@@ -222,7 +222,7 @@ class ChartViewModel(
                 val fetchedCandles = restService.fetchHistoricalKlines(
                     symbol = symbol.symbol,
                     interval = interval.code,
-                    limit = 200
+                    limit = 500
                 )
 
                 withContext(Dispatchers.Default) {
@@ -253,21 +253,25 @@ class ChartViewModel(
         }
     }
 
-    private fun generateHistoricalForexCandles(symbol: CryptoSymbol): List<CandleData> {
+    private fun generateHistoricalForexCandles(
+        symbol: CryptoSymbol,
+        interval: ChartInterval = ChartInterval.ONE_MIN
+    ): List<CandleData> {
         val candles = mutableListOf<CandleData>()
         val now = System.currentTimeMillis()
-        val intervalMs = 60_000L // 1 min
+        val intervalMs = interval.durationMs
         var currentPrice = symbol.basePrice
         val pipStep = if (symbol.pipDigits == 4) 0.0001f else 0.01f
+        val count = if (interval == ChartInterval.ONE_DAY) 365 else 300
 
-        for (i in 180 downTo 0) {
+        for (i in (count - 1) downTo 0) {
             val timestamp = now - (i * intervalMs)
             val open = currentPrice
-            val changePips = (Random.nextFloat() - 0.49f) * 10f * pipStep
+            val changePips = (Random.nextFloat() - 0.49f) * 12f * pipStep
             val close = open + changePips
-            val high = maxOf(open, close) + Random.nextFloat() * 3f * pipStep
-            val low = minOf(open, close) - Random.nextFloat() * 3f * pipStep
-            val vol = Random.nextFloat() * 800f + 100f
+            val high = maxOf(open, close) + Random.nextFloat() * 4f * pipStep
+            val low = minOf(open, close) - Random.nextFloat() * 4f * pipStep
+            val vol = Random.nextFloat() * 1200f + 200f
 
             candles.add(
                 CandleData(

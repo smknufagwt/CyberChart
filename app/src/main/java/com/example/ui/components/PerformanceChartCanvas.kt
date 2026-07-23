@@ -134,6 +134,11 @@ fun PerformanceChartCanvas(
     var visibleCandleCount by remember { mutableIntStateOf(50) }
     var panOffsetIndex by remember { mutableIntStateOf(0) }
 
+    // Y-Axis Price Scale Spanning & Vertical Pan
+    var priceScaleFactor by remember { mutableFloatStateOf(1.0f) }
+    var priceCenterOffset by remember { mutableFloatStateOf(0.0f) }
+    var isYAxisDragActive by remember { mutableStateOf(false) }
+
     // Active gesture drawing state
     var isDrawingActive by remember { mutableStateOf(false) }
     var drawStartOffset by remember { mutableStateOf(Offset.Zero) }
@@ -158,7 +163,7 @@ fun PerformanceChartCanvas(
     val axisTextStyle = remember {
         TextStyle(
             color = CyberTextSecondary,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold
         )
@@ -176,7 +181,7 @@ fun PerformanceChartCanvas(
     val legendTextStyle = remember {
         TextStyle(
             color = CyberTextPrimary,
-            fontSize = 10.sp,
+            fontSize = 12.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold
         )
@@ -185,7 +190,7 @@ fun PerformanceChartCanvas(
     val peakCalloutStyle = remember {
         TextStyle(
             color = Color.White,
-            fontSize = 8.sp,
+            fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold
         )
@@ -194,7 +199,7 @@ fun PerformanceChartCanvas(
     val volTextStyle = remember {
         TextStyle(
             color = Color.White.copy(alpha = 0.5f),
-            fontSize = 8.sp,
+            fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold
         )
@@ -214,73 +219,114 @@ fun PerformanceChartCanvas(
                                 val newCount = (visibleCandleCount / zoom).toInt()
                                 visibleCandleCount = newCount.coerceIn(15, 150)
                             }
-                            if (pan.x != 0f) {
-                                val candleWidth = size.width / visibleCandleCount.toFloat()
-                                val indexDelta = (-pan.x / candleWidth).toInt()
-                                if (indexDelta != 0) {
-                                    val maxPan = max(0, candles.size - visibleCandleCount)
-                                    panOffsetIndex = (panOffsetIndex + indexDelta).coerceIn(-maxPan, 0)
-                                }
-                            }
                         }
                     }
                 }
             }
-            .pointerInput(state.drawingMode, candles.size, visibleCandleCount, panOffsetIndex) {
-                if (state.drawingMode != DrawingMode.PAN_ZOOM) {
-                    // Interactive Drawing Gestures
-                    detectDragGestures(
-                        onDragStart = { offset ->
+            .pointerInput(state.drawingMode, candles.size, visibleCandleCount, panOffsetIndex, priceScaleFactor) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val plotWidth = size.width - 75f
+                        if (offset.x >= plotWidth) {
+                            isYAxisDragActive = true
+                        } else if (state.drawingMode != DrawingMode.PAN_ZOOM) {
                             isDrawingActive = true
                             drawStartOffset = offset
                             drawCurrentOffset = offset
-                        },
-                        onDrag = { change, _ ->
-                            change.consume()
+                        } else {
+                            isYAxisDragActive = false
+                        }
+                    },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        val plotWidth = size.width - 75f
+                        if (isYAxisDragActive || change.position.x >= plotWidth) {
+                            // Dragging on Y-axis scales price range (TradingView style span)
+                            priceScaleFactor = (priceScaleFactor * (1f + dragAmount.y * 0.006f)).coerceIn(0.15f, 15.0f)
+                        } else if (state.drawingMode != DrawingMode.PAN_ZOOM) {
                             drawCurrentOffset = change.position
-                        },
-                        onDragEnd = {
-                            if (isDrawingActive && candles.isNotEmpty()) {
-                                isDrawingActive = false
-                                val chartHeight = size.height * 0.75f
-                                val rightPadding = 70f
-                                val plotWidth = size.width - rightPadding
-
-                                val totalCount = candles.size
-                                val endIndex = (totalCount + panOffsetIndex).coerceIn(1, totalCount)
-                                val startIndex = max(0, endIndex - visibleCandleCount)
-                                val visibleList = candles.subList(startIndex, endIndex)
-
-                                if (visibleList.isNotEmpty()) {
-                                    val minPrice = visibleList.minOf { it.low }
-                                    val maxPrice = visibleList.maxOf { it.high }
-                                    val priceRange = max(0.0001f, maxPrice - minPrice)
-
-                                    if (state.drawingMode == DrawingMode.HORIZONTAL_LINE) {
-                                        val price = maxPrice - ((drawStartOffset.y / chartHeight) * priceRange)
-                                        onAddHorizontalLine(price)
-                                    } else if (state.drawingMode == DrawingMode.TREND_LINE) {
-                                        val startIdx = ((drawStartOffset.x / plotWidth) * visibleList.size).toInt().coerceIn(0, visibleList.lastIndex)
-                                        val endIdx = ((drawCurrentOffset.x / plotWidth) * visibleList.size).toInt().coerceIn(0, visibleList.lastIndex)
-
-                                        val startCandle = visibleList[startIdx]
-                                        val endCandle = visibleList[endIdx]
-
-                                        val startPrice = maxPrice - ((drawStartOffset.y / chartHeight) * priceRange)
-                                        val endPrice = maxPrice - ((drawCurrentOffset.y / chartHeight) * priceRange)
-
-                                        onAddTrendLine(startCandle.timestamp, startPrice, endCandle.timestamp, endPrice)
+                        } else {
+                            // Panning chart horizontally and vertically
+                            if (candles.isNotEmpty()) {
+                                if (dragAmount.x != 0f) {
+                                    val candleWidth = plotWidth / visibleCandleCount.toFloat()
+                                    val indexDelta = (-dragAmount.x / candleWidth).toInt()
+                                    if (indexDelta != 0) {
+                                        val maxPan = max(0, candles.size - visibleCandleCount)
+                                        panOffsetIndex = (panOffsetIndex + indexDelta).coerceIn(-maxPan, 0)
                                     }
+                                }
+                                if (dragAmount.y != 0f) {
+                                    priceCenterOffset += dragAmount.y
                                 }
                             }
                         }
-                    )
-                } else {
-                    // Crosshair Tap Selection
-                    detectTapGestures { offset ->
-                        if (candles.isNotEmpty()) {
-                            val rightPadding = 70f
-                            val plotWidth = size.width - rightPadding
+                    },
+                    onDragEnd = {
+                        isYAxisDragActive = false
+                        if (isDrawingActive && candles.isNotEmpty()) {
+                            isDrawingActive = false
+                            val chartHeight = size.height * 0.75f
+                            val plotWidth = size.width - 75f
+
+                            val totalCount = candles.size
+                            val endIndex = (totalCount + panOffsetIndex).coerceIn(1, totalCount)
+                            val startIndex = max(0, endIndex - visibleCandleCount)
+                            val visibleList = candles.subList(startIndex, endIndex)
+
+                            if (visibleList.isNotEmpty()) {
+                                val rawMin = visibleList.minOf { it.low }
+                                val rawMax = visibleList.maxOf { it.high }
+                                val rawMid = (rawMax + rawMin) / 2f
+                                val rawSpan = max(0.0001f, rawMax - rawMin)
+                                val minSpan = if (state.symbol.pipDigits > 2) 0.0010f else max(0.1f, rawMid * 0.0025f)
+                                val effectiveSpan = max(rawSpan, minSpan)
+                                val pMargin = effectiveSpan * 0.08f
+                                val halfSpan = ((effectiveSpan / 2f) + pMargin) * priceScaleFactor
+                                val cPrice = rawMid + (priceCenterOffset * (effectiveSpan / chartHeight))
+                                val pMin = cPrice - halfSpan
+                                val pMax = cPrice + halfSpan
+                                val pRange = max(0.0001f, pMax - pMin)
+
+                                if (state.drawingMode == DrawingMode.HORIZONTAL_LINE) {
+                                    val price = pMax - ((drawStartOffset.y / chartHeight) * pRange)
+                                    onAddHorizontalLine(price)
+                                } else if (state.drawingMode == DrawingMode.TREND_LINE) {
+                                    val startIdx = ((drawStartOffset.x / plotWidth) * visibleList.size).toInt().coerceIn(0, visibleList.lastIndex)
+                                    val endIdx = ((drawCurrentOffset.x / plotWidth) * visibleList.size).toInt().coerceIn(0, visibleList.lastIndex)
+
+                                    val startCandle = visibleList[startIdx]
+                                    val endCandle = visibleList[endIdx]
+
+                                    val startPrice = pMax - ((drawStartOffset.y / chartHeight) * pRange)
+                                    val endPrice = pMax - ((drawCurrentOffset.y / chartHeight) * pRange)
+
+                                    onAddTrendLine(startCandle.timestamp, startPrice, endCandle.timestamp, endPrice)
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = { offset ->
+                        val plotWidth = size.width - 75f
+                        if (offset.x >= plotWidth || priceScaleFactor != 1.0f || priceCenterOffset != 0f) {
+                            // Reset Y-axis scale to Auto
+                            priceScaleFactor = 1.0f
+                            priceCenterOffset = 0.0f
+                        }
+                    },
+                    onTap = { offset ->
+                        val plotWidth = size.width - 75f
+                        if (offset.x >= plotWidth) {
+                            // Tap on Y-axis or AUTO button resets scale
+                            if (priceScaleFactor != 1.0f || priceCenterOffset != 0f) {
+                                priceScaleFactor = 1.0f
+                                priceCenterOffset = 0.0f
+                            }
+                        } else if (candles.isNotEmpty() && state.drawingMode == DrawingMode.PAN_ZOOM) {
                             val totalCount = candles.size
                             val endIndex = (totalCount + panOffsetIndex).coerceIn(1, totalCount)
                             val startIndex = max(0, endIndex - visibleCandleCount)
@@ -292,7 +338,7 @@ fun PerformanceChartCanvas(
                             onSelectCandle(actualIndex)
                         }
                     }
-                }
+                )
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -345,8 +391,8 @@ fun PerformanceChartCanvas(
             }
 
             // Layout split: Main Chart = 78% height, RSI Panel = 22% height if visible
-            val rightPadding = 75f
-            val axisBottomPadding = 20f
+            val rightPadding = 85f
+            val axisBottomPadding = 26f
 
             val rsiHeight = if (state.showRsi14) canvasHeight * 0.20f else 0f
             val mainChartHeight = canvasHeight - rsiHeight - axisBottomPadding
@@ -365,30 +411,46 @@ fun PerformanceChartCanvas(
             val bodyWidth = max(1.5f, candleWidth * 0.72f)
             val halfBodyWidth = bodyWidth / 2f
 
-            // Min and Max price bounds with padding
-            var minPrice = Float.MAX_VALUE
-            var maxPrice = Float.MIN_VALUE
+            // Min and Max price bounds with volatility protection & scale spanning
+            var rawMinPrice = Float.MAX_VALUE
+            var rawMaxPrice = Float.MIN_VALUE
             var maxVolume = 0f
             var highestCandleIdx = 0
             var lowestCandleIdx = 0
 
             for (i in 0 until visibleCount) {
                 val c = visibleCandles[i]
-                if (c.low < minPrice) {
-                    minPrice = c.low
+                if (c.low < rawMinPrice) {
+                    rawMinPrice = c.low
                     lowestCandleIdx = i
                 }
-                if (c.high > maxPrice) {
-                    maxPrice = c.high
+                if (c.high > rawMaxPrice) {
+                    rawMaxPrice = c.high
                     highestCandleIdx = i
                 }
                 if (c.volume > maxVolume) maxVolume = c.volume
             }
 
-            val priceMargin = max(0.1f, (maxPrice - minPrice) * 0.06f)
-            minPrice -= priceMargin
-            maxPrice += priceMargin
-            val priceRange = max(0.001f, maxPrice - minPrice)
+            val rawMidPrice = (rawMaxPrice + rawMinPrice) / 2f
+            val rawRange = rawMaxPrice - rawMinPrice
+
+            // Prevent auto-zoom hyper-stretching on low volatility / flat candles
+            val minSpan = if (state.symbol.pipDigits > 2) {
+                0.0010f // 10 pips minimum span for forex (e.g. EURUSD)
+            } else {
+                max(0.10f, rawMidPrice * 0.0025f) // 0.25% min span for crypto/stocks
+            }
+
+            val effectiveRange = max(rawRange, minSpan)
+            val priceMargin = effectiveRange * 0.08f
+
+            // Apply manual Y-axis span scale factor & vertical drag center offset
+            val halfSpan = ((effectiveRange / 2f) + priceMargin) * priceScaleFactor
+            val centerPrice = rawMidPrice + (priceCenterOffset * (effectiveRange / mainChartHeight))
+
+            var minPrice = centerPrice - halfSpan
+            var maxPrice = centerPrice + halfSpan
+            val priceRange = max(0.0001f, maxPrice - minPrice)
 
             // Inline coordinate converters
             fun priceToY(price: Float): Float {
@@ -417,7 +479,7 @@ fun PerformanceChartCanvas(
                     strokeWidth = 1f
                 )
 
-                val priceText = String.format(Locale.US, if (state.symbol.isForex && state.symbol.pipDigits == 4) "%.4f" else "%.2f", priceTick)
+                val priceText = String.format(Locale.US, "%.${state.symbol.pipDigits}f", priceTick)
                 val measuredPrice = textMeasurer.measure(priceText, axisTextStyle)
                 drawText(
                     textLayoutResult = measuredPrice,
@@ -432,6 +494,25 @@ fun PerformanceChartCanvas(
                 end = Offset(plotWidth, mainChartHeight),
                 strokeWidth = 1.5f
             )
+
+            // Draw AUTO reset scale button when price scale is customized
+            val isCustomScaled = priceScaleFactor != 1.0f || priceCenterOffset != 0f
+            if (isCustomScaled) {
+                val autoText = "⚙ AUTO"
+                val measuredAuto = textMeasurer.measure(autoText, peakCalloutStyle)
+                val autoX = plotWidth + 4f
+                val autoY = mainChartHeight - measuredAuto.size.height - 12f
+
+                drawRect(
+                    color = ElectricNeonViolet,
+                    topLeft = Offset(autoX, autoY),
+                    size = Size(measuredAuto.size.width + 10f, measuredAuto.size.height + 6f)
+                )
+                drawText(
+                    textLayoutResult = measuredAuto,
+                    topLeft = Offset(autoX + 5f, autoY + 3f)
+                )
+            }
 
             // Time X Axis grid lines
             val timeStepCount = min(5, visibleCount)

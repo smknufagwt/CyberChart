@@ -125,7 +125,7 @@ class BinanceRestService(
      * High-fidelity synthetic fallback candle generator so the chart renders instantly
      * even without active internet connection.
      */
-    fun generateFallbackKlines(symbol: String, count: Int = 200): List<CandleData> {
+    fun generateFallbackKlines(symbol: String, count: Int = 500): List<CandleData> {
         val basePrice = when (symbol.lowercase()) {
             "btcusdt" -> 88500f
             "ethusdt" -> 3250f
