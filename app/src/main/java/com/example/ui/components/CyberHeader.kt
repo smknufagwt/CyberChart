@@ -109,7 +109,7 @@ fun CyberHeader(
                 
                 // Live price readout
                 Text(
-                    text = String.format(Locale.US, if (state.symbol.isForex && state.symbol.pipDigits == 4) "%.4f" else "%.2f", currentPrice),
+                    text = String.format(Locale.US, "%.${state.symbol.pipDigits}f", currentPrice),
                     color = if (isPositive) ElectricNeonViolet else CyberCyan,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,

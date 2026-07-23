@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -113,6 +116,12 @@ fun MacroLiquidityPanel(
                     else -> ElectricNeonViolet
                 }
 
+                val animatedFngProgress by animateFloatAsState(
+                    targetValue = fngValue / 100f,
+                    animationSpec = tween(durationMillis = 800),
+                    label = "fngProgress"
+                )
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -144,9 +153,9 @@ fun MacroLiquidityPanel(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        // Progress Bar representing 0-100 meter
+                        // Progress Bar representing 0-100 meter with smooth animation
                         LinearProgressIndicator(
-                            progress = { fngValue / 100f },
+                            progress = { animatedFngProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp),

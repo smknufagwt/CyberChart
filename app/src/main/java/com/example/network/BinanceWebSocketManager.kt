@@ -96,27 +96,46 @@ class BinanceWebSocketManager(
         })
     }
 
+    private val mapAdapter = moshi.adapter(Map::class.java)
+
     /**
-     * Fast string extraction to avoid heavy object allocation on low-end CPUs.
-     * Extracts values directly from the Binance kline JSON event:
-     * {"e":"kline","E":...,"k":{"t":123456,"o":"88000.00","c":"88500.00","h":"88600.00","l":"87900.00","v":"12.5"}}
+     * Fast string extraction with Moshi structured fallback to handle any Binance WebSocket payload variation.
      */
     private fun parseKlineMessage(json: String): CandleData? {
         try {
-            // Check if it's a kline event
             if (!json.contains("\"e\":\"kline\"")) return null
 
             val kIndex = json.indexOf("\"k\":{")
-            if (kIndex == -1) return null
+            if (kIndex != -1) {
+                val kObj = json.substring(kIndex + 4)
+                val t = extractJsonLong(kObj, "\"t\":")
+                val o = extractJsonFloat(kObj, "\"o\":\"")
+                val h = extractJsonFloat(kObj, "\"h\":\"")
+                val l = extractJsonFloat(kObj, "\"l\":\"")
+                val c = extractJsonFloat(kObj, "\"c\":\"")
+                val v = extractJsonFloat(kObj, "\"v\":\"") ?: 0f
 
-            val kObj = json.substring(kIndex + 4)
+                if (t != null && o != null && h != null && l != null && c != null) {
+                    return CandleData(
+                        timestamp = t,
+                        open = o,
+                        high = h,
+                        low = l,
+                        close = c,
+                        volume = v
+                    )
+                }
+            }
 
-            val t = extractJsonLong(kObj, "\"t\":") ?: return null
-            val o = extractJsonFloat(kObj, "\"o\":\"") ?: return null
-            val h = extractJsonFloat(kObj, "\"h\":\"") ?: return null
-            val l = extractJsonFloat(kObj, "\"l\":\"") ?: return null
-            val c = extractJsonFloat(kObj, "\"c\":\"") ?: return null
-            val v = extractJsonFloat(kObj, "\"v\":\"") ?: 0f
+            // Robust fallback via Moshi adapter
+            val map = mapAdapter.fromJson(json) as? Map<*, *>
+            val kMap = map?.get("k") as? Map<*, *> ?: return null
+            val t = (kMap["t"] as? Number)?.toLong() ?: return null
+            val o = (kMap["o"] as? String)?.toFloatOrNull() ?: return null
+            val h = (kMap["h"] as? String)?.toFloatOrNull() ?: return null
+            val l = (kMap["l"] as? String)?.toFloatOrNull() ?: return null
+            val c = (kMap["c"] as? String)?.toFloatOrNull() ?: return null
+            val v = (kMap["v"] as? String)?.toFloatOrNull() ?: 0f
 
             return CandleData(
                 timestamp = t,

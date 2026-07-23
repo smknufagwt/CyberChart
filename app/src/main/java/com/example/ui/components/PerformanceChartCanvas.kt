@@ -1,6 +1,12 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -92,6 +98,37 @@ fun PerformanceChartCanvas(
     val candles = state.candles
     val drawings = state.drawings
     val textMeasurer = rememberTextMeasurer()
+
+    // Real-time tick pulse & stream liquidity animations
+    val infiniteTransition = rememberInfiniteTransition(label = "terminalAnimation")
+    val beaconRadius by infiniteTransition.animateFloat(
+        initialValue = 2f,
+        targetValue = 18f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "beaconRadius"
+    )
+    val beaconAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.9f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "beaconAlpha"
+    )
+
+    val dashOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 40f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "dashOffset"
+    )
 
     // Pan & Zoom view state
     var visibleCandleCount by remember { mutableIntStateOf(50) }
@@ -733,10 +770,23 @@ fun PerformanceChartCanvas(
                     pathEffect = dashedEffect
                 )
 
+                // Live Beacon Pulse Dot on Latest Candle
+                val lastCandleX = indexToX(visibleCandles.lastIndex)
+                drawCircle(
+                    color = liveColor.copy(alpha = beaconAlpha),
+                    radius = beaconRadius,
+                    center = Offset(lastCandleX, liveY)
+                )
+                drawCircle(
+                    color = liveColor,
+                    radius = 3.5f,
+                    center = Offset(lastCandleX, liveY)
+                )
+
                 // Right axis live price badge
                 val livePriceStr = String.format(
                     Locale.US,
-                    if (state.symbol.isForex && state.symbol.pipDigits == 4) "%.4f" else "%.2f",
+                    "%.${state.symbol.pipDigits}f",
                     latestCandle.close
                 )
                 val measuredLive = textMeasurer.measure(livePriceStr, peakCalloutStyle)
@@ -752,7 +802,7 @@ fun PerformanceChartCanvas(
                 )
             }
 
-            // 9.5 Draw Liquidity Pools (BSL / SSL Lines - Smart Money Concepts)
+            // 9.5 Draw Liquidity Pools (BSL / SSL Lines - Smart Money Concepts with Animated Stream Effect)
             if (state.showLiquidityOverlay) {
                 val bslLevel = state.liquidityConcept.buySideLevel
                 val sslLevel = state.liquidityConcept.sellSideLevel
@@ -766,7 +816,7 @@ fun PerformanceChartCanvas(
                             start = Offset(0f, bslY),
                             end = Offset(plotWidth, bslY),
                             strokeWidth = 1.5f,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), dashOffset)
                         )
                         val bslText = "💧 BSL POOL"
                         val measuredBsl = textMeasurer.measure(bslText, peakCalloutStyle)
@@ -791,7 +841,7 @@ fun PerformanceChartCanvas(
                             start = Offset(0f, sslY),
                             end = Offset(plotWidth, sslY),
                             strokeWidth = 1.5f,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), dashOffset)
                         )
                         val sslText = "💧 SSL POOL"
                         val measuredSsl = textMeasurer.measure(sslText, peakCalloutStyle)
