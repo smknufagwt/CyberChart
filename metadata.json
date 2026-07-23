@@ -1,0 +1,6 @@
+{
+  "name": "CyberChart Terminal",
+  "description": "Zero-lag Cyberpunk Financial Charting Engine with custom Canvas rendering and real-time Binance WebSocket streaming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
